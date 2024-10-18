@@ -44,13 +44,13 @@ const HomePage = () => {
     setTrendingTVShows(trendingShows.sort(() => 0.5 - Math.random()));
   };
 
-  // Fetch trailer for a movie (using IMDb ID)
+  
   const fetchMovieTrailer = (imdbID) => {
     const trailerUrl = `https://www.youtube.com/watch?v=${imdbID}`;
     setTrailerUrl(trailerUrl);
   };
 
-  // Handle movie search
+ 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchTerm) {
