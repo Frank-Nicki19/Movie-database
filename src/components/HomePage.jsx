@@ -1,40 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './HomePage.css';
 import apiClient from './apiClient'; // Ensure this path is correct
 
 const HomePage = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [movies, setMovies] = useState([]); // To store search results
+  const [movies, setMovies] = useState([]);
+  const [featuredMovies, setFeaturedMovies] = useState([]);
+  const [topPicks, setTopPicks] = useState([]);
+  const [trendingTVShows, setTrendingTVShows] = useState([]);
+  const [trailerUrl, setTrailerUrl] = useState('');
   const [darkMode, setDarkMode] = useState(true);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [email, setEmail] = useState('');
 
+  // Simulate top picked movies based on user interactions
+  const topPicksData = ['tt0111161', 'tt0068646', 'tt0071562', 'tt0468569']; // IMDb IDs for top movies
+
   // Function to fetch movies from OMDb API
-  const fetchMoviesByTitle = async (title) => {
+  const fetchMovies = async (title, type = 'movie') => {
     try {
       const response = await apiClient.get('', {
-        params: {
-          s: title, // 's' is the search parameter in OMDb API for movies
-        },
+        params: { s: title, type },
       });
       if (response.data.Response === "True") {
-        setMovies(response.data.Search); // Assuming Search contains an array of movies
-      } else {
-        setMovies([]); // No movies found, clear the list
-        alert('No movies found');
+        return response.data.Search;
       }
+      return [];
     } catch (error) {
       console.error('Error fetching movies:', error);
+      return [];
     }
   };
 
-  // Handle Search button click
+  // Fetch featured movies, top picks, and trending TV shows
+  const fetchHomePageContent = async () => {
+    const featured = await fetchMovies('trending');
+    const topPicksMovies = await Promise.all(topPicksData.map(id => fetchMovies(id)));
+    const trendingShows = await fetchMovies('trending', 'series');
+    
+    // Shuffle arrays to change displayed movies on refresh
+    setFeaturedMovies(featured.sort(() => 0.5 - Math.random()));
+    setTopPicks(topPicksMovies.flat().sort(() => 0.5 - Math.random()));
+    setTrendingTVShows(trendingShows.sort(() => 0.5 - Math.random()));
+  };
+
+  // Fetch trailer for a movie (using IMDb ID)
+  const fetchMovieTrailer = (imdbID) => {
+    const trailerUrl = `https://www.youtube.com/watch?v=${imdbID}`;
+    setTrailerUrl(trailerUrl);
+  };
+
+  // Handle movie search
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchTerm) {
-      fetchMoviesByTitle(searchTerm);
+      fetchMovies(searchTerm).then((movies) => setMovies(movies));
     }
   };
+
+  useEffect(() => {
+    fetchHomePageContent();
+  }, []);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -64,16 +90,6 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Hero Banner */}
-      <div className="hero-banner">
-        <div className="hero-content">
-          <h1>Featured Movie</h1>
-          <p>Exciting movie description goes here.</p>
-          <button className="play-button">Play</button>
-          <button className="info-button">More Info</button>
-        </div>
-      </div>
-
       {/* Search Bar */}
       <div className="search-bar">
         <form onSubmit={handleSearch}>
@@ -88,19 +104,41 @@ const HomePage = () => {
       </div>
 
       {/* Search Results */}
-      {movies.length > 0 ? (
+      {movies.length > 0 && (
         <div className="content-section">
-          <ContentRow title="Search Results" movies={movies} />
+          <ContentRow title="Search Results" movies={movies} onPlayTrailer={fetchMovieTrailer} />
         </div>
-      ) : (
-        <p className="no-results">No movies found. Try searching for something else.</p>
       )}
 
-      {/* Content Rows */}
+      {/* Trailer Section */}
+      {trailerUrl && (
+        <div className="trailer-section">
+          <h2>Trailer</h2>
+          <iframe
+            width="560"
+            height="315"
+            src={trailerUrl}
+            title="Movie Trailer"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          ></iframe>
+        </div>
+      )}
+
+      {/* Featured Movies Section */}
       <div className="content-section">
-        <ContentRow title="Trending Now" movies={['Movie1', 'Movie2', 'Movie3', 'Movie4']} />
-        <ContentRow title="Top Picks" movies={['Movie5', 'Movie6', 'Movie7', 'Movie8']} />
-        <ContentRow title="Action" movies={['Movie9', 'Movie10', 'Movie11', 'Movie12']} />
+        <ContentRow title="Featured Movies" movies={featuredMovies} onPlayTrailer={fetchMovieTrailer} />
+      </div>
+
+      {/* Top Picks Section */}
+      <div className="content-section">
+        <ContentRow title="Top Picks" movies={topPicks} onPlayTrailer={fetchMovieTrailer} />
+      </div>
+
+      {/* Trending TV Shows Section */}
+      <div className="content-section">
+        <ContentRow title="Trending TV Shows" movies={trendingTVShows} onPlayTrailer={fetchMovieTrailer} />
       </div>
 
       {/* Login Modal */}
@@ -123,8 +161,8 @@ const HomePage = () => {
   );
 };
 
-// ContentRow Component (to display movies in rows)
-const ContentRow = ({ title, movies }) => {
+// ContentRow Component
+const ContentRow = ({ title, movies, onPlayTrailer }) => {
   return (
     <div className="content-row">
       <h2>{title}</h2>
@@ -132,10 +170,11 @@ const ContentRow = ({ title, movies }) => {
         {movies.map((movie, index) => (
           <div key={index} className="movie-card">
             <img
-              src={movie.Poster ? movie.Poster : `https://via.placeholder.com/200x300?text=${movie.Title}`}
+              src={movie.Poster || `https://via.placeholder.com/200x300?text=${movie.Title}`}
               alt={movie.Title}
             />
             <p>{movie.Title} ({movie.Year})</p>
+            <button onClick={() => onPlayTrailer(movie.imdbID)}>Play Trailer</button>
           </div>
         ))}
       </div>
@@ -144,4 +183,3 @@ const ContentRow = ({ title, movies }) => {
 };
 
 export default HomePage;
-
