@@ -1,0 +1,32 @@
+.tv-shows {
+    padding: 20px;
+  }
+  
+  .show-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+  }
+  
+  .show-card {
+    background-color: #1e1e1e;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+  }
+  
+  .show-poster {
+    width: 100%;
+    border-radius: 5px;
+  }
+  
+  .show-title {
+    color: #fff;
+    font-size: 1.2rem;
+    margin-top: 10px;
+  }
+  
+  .show-year {
+    color: #ccc;
+    font-size: 1rem;
+  }

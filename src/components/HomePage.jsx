@@ -42,7 +42,7 @@ const HomePage = () => {
 
   const handleLogin = () => {
     alert(`Logging in with email: ${email}`);
-    setLoginModalOpen(false); // Close the login modal after logging in
+    setLoginModalOpen(false); 
   };
 
   return (
