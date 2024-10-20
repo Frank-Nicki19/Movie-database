@@ -32,6 +32,15 @@ const HomePage = () => {
     }
   };
 
+  // Shuffle an array (Fisher-Yates shuffle)
+  const shuffleArray = (array) => {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  };
+
   // Fetch featured movies, top picks, and trending TV shows
   const fetchHomePageContent = async () => {
     const featured = await fetchMovies('trending');
@@ -39,22 +48,27 @@ const HomePage = () => {
     const trendingShows = await fetchMovies('trending', 'series');
     
     // Shuffle arrays to change displayed movies on refresh
-    setFeaturedMovies(featured.sort(() => 0.5 - Math.random()));
-    setTopPicks(topPicksMovies.flat().sort(() => 0.5 - Math.random()));
-    setTrendingTVShows(trendingShows.sort(() => 0.5 - Math.random()));
+    setFeaturedMovies(shuffleArray(featured));
+    setTopPicks(shuffleArray(topPicksMovies.flat()));
+    setTrendingTVShows(shuffleArray(trendingShows));
   };
 
-  
+  // Temporary trailer URL (You may integrate with YouTube API to fetch real trailers)
   const fetchMovieTrailer = (imdbID) => {
     const trailerUrl = `https://www.youtube.com/watch?v=${imdbID}`;
     setTrailerUrl(trailerUrl);
   };
 
- 
+  // Handle Search form submission
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchTerm) {
-      fetchMovies(searchTerm).then((movies) => setMovies(movies));
+      fetchMovies(searchTerm).then((movies) => {
+        if (movies.length === 0) {
+          alert('No movies found for the search term.');
+        }
+        setMovies(movies);
+      });
     }
   };
 
@@ -104,7 +118,7 @@ const HomePage = () => {
       </div>
 
       {/* Search Results */}
-      {movies.length > 0 && (
+      {Array.isArray(movies) && movies.length > 0 && (
         <div className="content-section">
           <ContentRow title="Search Results" movies={movies} onPlayTrailer={fetchMovieTrailer} />
         </div>
